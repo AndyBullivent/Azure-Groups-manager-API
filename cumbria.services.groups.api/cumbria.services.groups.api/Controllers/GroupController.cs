@@ -1,4 +1,5 @@
-﻿using cumbria.services.msgraph;
+﻿using cumbria.services.groups.api.Models;
+using cumbria.services.msgraph;
 using cumbria.services.storage;
 using System;
 using System.Collections.Generic;
@@ -8,10 +9,11 @@ using System.Net.Http;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using System.Web.Http;
+using System.Web.Http.Results;
 
 namespace cumbria.services.groups.api.Controllers
 {
-    
+    [RoutePrefix("v1/group")]
     public class GroupController : BaseApiController
     {
         private IUserGroupManager _groupMgr;
@@ -22,26 +24,69 @@ namespace cumbria.services.groups.api.Controllers
         }
 
         [HttpGet]
-        public IEnumerable<Claim> ViewClaims()
+        [Route("claims")]
+        public IEnumerable<string> ViewClaims()
         {
-            return this.Claims;
+            return Claims.Select(c=>$"Type:{c.Type}, Value:{c.Value.ToString()}");
         }
 
         //[AuthorizeTenant]
         // GET api/<controller>
-        public async Task<IEnumerable<Group>> Get()
+        [HttpGet]
+        [Route("")]
+        [AuthorizeTenant]
+        public async Task<IEnumerable<VmGroup>> Get()
         {
-            return await _groupMgr.GetAllowedGroupsAsync();
+            string subject = Claims.Single(c => c.Type == "sub").Value.ToString();
+            var allowedGroups = await _groupMgr.GetAllowedGroupsAsync();
+            string[] memberships = await _groupMgr.GetUserMemberships(subject);
+            List<VmGroup> groupsVm = BuildMembershipsModel(allowedGroups, memberships);
+            return groupsVm;
+        }
+
+        private List<VmGroup> BuildMembershipsModel(IEnumerable<Group> allowedGroups, string[] memberships)
+        {
+            List<VmGroup> vmGroups = new List<VmGroup>();
+            foreach(var grp in allowedGroups)
+            {
+                VmGroup group = new VmGroup
+                {
+                    Id = grp.Id,
+                    StudentFriendlyName = grp.StudentFriendlyName,
+                    DisplayName = grp.DisplayName,
+                    CategoryId = grp.CategoryId
+                };
+                group.IsMember = memberships?.Any(memberOf => memberOf == grp.Id)??false;               
+
+                vmGroups.Add(group);                
+            }
+
+            return vmGroups;
         }
 
         [AuthorizeTenant]
+        [HttpPost]
+        [Route("")]
         // POST api/<controller>
-        public async Task Post([FromBody]string groupObjectId, [FromBody] bool addUser)
+        public async Task<ResponseMessageResult> Post(VmGroup group)
         {
-            if (addUser)
+            var subject = Claims.Single(c => c.Type == "sub").Value.ToString();
+            try
             {
-
+                if (group.IsMember)
+                {
+                    await _groupMgr.AddUserToGroup(subject, group.Id);
+                }
+                else
+                {
+                    await _groupMgr.RemoveUserFromGroup(subject, group.Id);
+                }
             }
+            catch (InvalidOperationException e)
+            {
+                return NotFound(e.Message);
+            }
+            return new ResponseMessageResult(new HttpResponseMessage(HttpStatusCode.Accepted));
         }
 
         // PUT api/<controller>/5

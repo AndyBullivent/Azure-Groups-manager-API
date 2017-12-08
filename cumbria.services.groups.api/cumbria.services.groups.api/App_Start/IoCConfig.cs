@@ -10,6 +10,7 @@ using System.Web;
 using System.Web.Http;
 using DryIoc.WebApi;
 using cumbria.services.groups.api.Config;
+using System.Diagnostics;
 
 namespace cumbria.services.groups.api
 {
@@ -18,7 +19,8 @@ namespace cumbria.services.groups.api
         public static void RegisterIoC(HttpConfiguration config)
         {
             var appCfg = new AppConfiguration();
-            var di = new DryIoc.Container();
+            var di = new DryIoc.Container().WithWebApi(config);
+
             var creds =
                 new GraphCredentials
                 {
@@ -27,11 +29,15 @@ namespace cumbria.services.groups.api
                     Tenant = appCfg.TenantId //"e58cae89-8f91-4f69-8cce-51abf1d13b44"
                 };
 
-            di.Register<IGroupRepository, GroupRepository>();
+            di.Register<IGroupRepository, GroupRepository>(setup: Setup.With(trackDisposableTransient: true));
             di.Register<IUserGroupManager, UserGroupManager>(Made.Of(() =>
-                new UserGroupManager(Arg.Of<GraphCredentials>(creds), Arg.Of<IGroupRepository>())));             
+                new UserGroupManager(creds, Arg.Of<IGroupRepository>())));
+            di.Register<IAdminGroupManager, AdminGroupManager>(Made.Of(() =>
+                new AdminGroupManager(creds, Arg.Of<IGroupRepository>())));
 
-            di.WithWebApi(config);
+            var errors = di.VerifyResolutions();
+            Debug.Assert(errors.Length == 0);
+
         }
     }
 }

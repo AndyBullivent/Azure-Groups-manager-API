@@ -34,11 +34,8 @@ namespace cumbria.services.groups.tests
         [TestMethod]
         public async Task GetAzureGroups()
         {
-
             IAdminGroupManager adminMgr = new AdminGroupManager(_creds, _mockRepository.Object);
             var groups = await adminMgr.GetAADGroupsAsync();
-
-
         }
 
         [TestMethod]
@@ -54,7 +51,7 @@ namespace cumbria.services.groups.tests
         public async Task RemoveFromGroup()
         {
             IUserGroupManager userMgr = new UserGroupManager(_creds, _mockRepository.Object);
-            await userMgr.RemoveUserFromGroup("1ca9441f-59c2-4f58-8a90-3ebbbbacef36", "3b22748d-443d-4d28-ada1-6b4f4437c4b1");
+            await userMgr.RemoveUserFromGroup("a59140cc-be94-4e70-9e3b-cad4fe857937", "6968242c-a055-4145-8534-39180046d980");
 
         }
 
@@ -93,6 +90,14 @@ namespace cumbria.services.groups.tests
         {
             IUserGroupManager userMgr = new UserGroupManager(_creds, _mockRepository.Object);
             await userMgr.RemoveUserFromGroup("1ca9441f-59c2-4f58-8a90-3ebbbbacef36", "3");
+
+        }
+
+        [TestMethod]
+        public async Task GetUserGroups()
+        {
+            IUserGroupManager usrGroupMgr = new UserGroupManager(_creds, _mockRepository.Object);
+            var groups = usrGroupMgr.GetUserMemberships("1ca9441f-59c2-4f58-8a90-3ebbbbacef36");
 
         }
 

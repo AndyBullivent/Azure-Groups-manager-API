@@ -46,9 +46,9 @@ namespace cumbria.services.groups
             return aadGroups;
         }
 
-        public async Task RemoveFromAllowedGroupAsync(IEnumerable<storage.Group> allowedGroupsToRemove)
+        public async Task RemoveFromAllowedGroupAsync(IEnumerable<string> allowedGroupsToRemove)
         {
-            await _repository.RemoveGroupsAsync(allowedGroupsToRemove.Select(group=>group.CategoryId));
+            await _repository.RemoveGroupsAsync(allowedGroupsToRemove);
         }
 
         public async Task RemoveFromAllowedGroupAsync(storage.Group allowedGroupToRemove)

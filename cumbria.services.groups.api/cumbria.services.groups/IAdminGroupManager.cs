@@ -15,6 +15,6 @@ namespace cumbria.services.groups
         Task AddToAllowedGroupsAsync(storage.Group allowedGroup);
         Task AddToAllowedGroupsAsync(IEnumerable<storage.Group> allowedGroup);
         Task RemoveFromAllowedGroupAsync(storage.Group allowedGroupToRemove);
-        Task RemoveFromAllowedGroupAsync(IEnumerable<storage.Group> allowedGroupsToRemove);
+        Task RemoveFromAllowedGroupAsync(IEnumerable<string> allowedGroupsToRemove);
     }
 }
